@@ -1,0 +1,7 @@
+*.png
+!image/*.png
+build/
+output/*.png
+output/*.avi
+output/*.jpg
+output/*.jpeg
