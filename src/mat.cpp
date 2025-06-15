@@ -597,17 +597,22 @@ void imdecode() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
   std::string path = root_path + "/image/660.jpg";
 
-#if 0
-  // 这种方式不行，推测是因为Mat.data存储图像格式跟原始文件不一致
-  // data指向的是图像的数据，而不是图像的完整二进制数据
+
+  // 这种方式不行，因为Mat.data存储图像格式跟原始文件不一致。data指向的是图像的数据，而不是图像的完整二进制数据
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
   std::ptrdiff_t size = image.dataend - image.datastart;
   std::cout << "image size: " << image.size()
-            << "diff: " << size
-            << ", total * elemSize: " << image.total() * image.elemSize()
+            << ", image channels: " << image.channels()
+            << ", image depth: " << image.depth()
+            << ", image length: " << image.cols
+            << ", image width: " << image.rows
+            << ", length * width = " << image.cols * image.rows
+            << ", diff: " << size
+            << ", total: " << image.total() << " * elemSize: " << image.elemSize()
+            << " = " << image.total() * image.elemSize()
             << std::endl;
   std::vector<uchar> data(const_cast<uchar*>(image.datastart), const_cast<uchar*>(image.dataend));
-#endif
+
 
   std::ifstream ifs = std::ifstream(path, std::ios::binary);
   std::stringstream ss;
@@ -617,6 +622,9 @@ void imdecode() {
     reinterpret_cast<uchar*>(const_cast<char*>(str.data())),
     str.size() + reinterpret_cast<uchar*>(const_cast<char*>(str.data()))
   );
+  std::cout << "data1 size: " << data1.size() << " B, "
+            << data1.size() / 1024.0 << " KB, "
+            << data1.size() / 1024.0 / 1024.0 << " MB" << std::endl;
 
   /**
    * @brief 从内存中的buffer解析图片
