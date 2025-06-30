@@ -16,20 +16,26 @@ void ConFun() {
   cv::Mat mat; // 创建一个空的Mat对象
 
   cv::Mat mat1(2, 3, CV_8UC3); // 创建一个rows=2, cols=3, type=CV_8UC3类型的Mat对象
+  std::cout << "mat1: \n" << mat1 << std::endl;
 
   cv::Size size(3, 2); // 创建一个Size对象, width=3, height=2
   cv::Mat mat2(size, CV_8UC3); // 创建一个rows=2, cols=3, type=CV_8UC3类型的Mat对象
+  std::cout << "mat2: \n" << mat2 << std::endl;
 
   cv::Scalar scalar(0, 0, 255); // 创建一个Scalar对象, B=0, G=0, R=255
   cv::Mat mat3(2, 3, CV_8UC3, scalar); // 创建一个rows=2, cols=3, type=CV_8UC3类型的Mat对象, 并初始化所有元素为scalar
+  std::cout << "mat3: \n" << mat3 << std::endl;
 
   cv::Mat mat4 = cv::Mat(size, CV_8UC3, scalar); // 创建一个rows=2, cols=3, type=CV_8UC3类型的Mat对象, 并初始化所有元素为scalar
+  std::cout << "mat4: \n" << mat4 << std::endl;
 
   const int sizes[] = {4, 5}; // 创建一个int数组，数组元素大小要跟维度数量一致，例如二维数组，数组元素大小为2；三维数组，数组元素大小为3
-  cv::Mat mat5 = cv::Mat(2, sizes, CV_8UC3); // 创建一个2维的Mat对象, 维度大小为2行3列, type=CV_8UC3
-  std::cout << "mat size: " << mat5.size() << std::endl; // 输出mat的size
+  cv::Mat mat5 = cv::Mat(2, sizes, CV_8UC3); // 创建一个2维的Mat对象, 维度大小为4行5列(宽为5，高为4), type=CV_8UC3
+  std::cout << "mat5: \n" << mat5 << std::endl;
+  std::cout << "mat5 size: " << mat5.size() << std::endl; // 输出mat的size
 
   cv::Mat mat6 = cv::Mat(2, sizes, CV_8UC4, cv::Scalar{1, 2, 3, 4}); // 创建一个2维的Mat对象, 维度大小为2行3列, type=CV_8UC3, 并初始化所有元素为scalar
+  std::cout << "mat6: \n" << mat6 << std::endl;
 
   cv::Rect rect(1, 2, 2, 2); // 创建一个Rect对象，x=1, y=2, width=1, height=1
   cv::Mat mat7 = cv::Mat(mat6, rect); // 创建一个mat6的子矩阵，即mat6的第2行第3列的元素
