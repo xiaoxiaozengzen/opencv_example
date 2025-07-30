@@ -32,6 +32,12 @@ class ZetaConan(ConanFile):
         self.options["opencv"].with_gtk = False
         self.options["opencv"].with_jpeg = "libjpeg-turbo"
         self.options["opencv"].text = False
+        self.options["opencv"].with_cuda = True
+        self.options["opencv"].cudaarithm = True
+        self.options["opencv"].dnn = True
+        self.options["opencv"].cudaimgproc = True
+        self.options["opencv"].cudawarping = True
+        self.options["opencv"].cuda_arch_bin = "7.2,7.5,8.6"
 
     def build_requirements(self):
         pass

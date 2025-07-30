@@ -1,12 +1,12 @@
 #include <string> // 字符串
 #include <vector> // 向量
+#include <iostream> // 输入输出流
+#include <set> // 集合
 
 #include <opencv2/core.hpp> // OpenCV核心功能
 #include <opencv2/imgcodecs.hpp> // 图像编解码
 #include <opencv2/highgui.hpp> // GUI
 #include <opencv2/imgproc.hpp> // 图像处理
-#include <iostream> // 输入输出流
-#include <set> // 集合
 #include <opencv2/opencv.hpp> // OpenCV主要功能
 #include <opencv2/imgproc/types_c.h> // 旧版的图像处理
 
