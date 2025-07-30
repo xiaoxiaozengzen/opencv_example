@@ -187,7 +187,7 @@ void MemFun() {
 
   // cv::Mat的对图片的操作
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   cv::Mat image_col = image.col(20); // 获取image的第20列
@@ -253,7 +253,7 @@ void MemFun() {
 void GlobalFun() {
   // cv::Mat的对图片的操作
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   /**********************************cv::remap*********************************************/
@@ -392,7 +392,7 @@ void GlobalFun() {
 
 void ImRead() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
 
   /**
    * @param filename 图片路径
@@ -429,7 +429,7 @@ void ImRead() {
 
 void ImWrite() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   cv::Mat image_alpha = cv::Mat(image.size(), CV_8UC1); // 创建一个和image大小一样的CV_8UC4类型的Mat对象
@@ -462,7 +462,7 @@ void ImWrite() {
 
 void Color() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   cv::Mat image_gray;
@@ -499,7 +499,7 @@ void Color() {
 
 void line() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   cv::Mat image_line = image.clone();
@@ -526,7 +526,7 @@ void line() {
 
 void putText() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
   
   cv::Mat image_text = image.clone();
@@ -553,7 +553,7 @@ void putText() {
 
 void rectangle() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   cv::Mat image_rectangle = image.clone();
@@ -580,7 +580,7 @@ void rectangle() {
 
 void circle() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   cv::Mat image_circle = image.clone();
@@ -601,7 +601,7 @@ void circle() {
 
 void imdecode() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
 
 
   // 这种方式不行，因为Mat.data存储图像格式跟原始文件不一致。data指向的是图像的数据，而不是图像的完整二进制数据
@@ -652,7 +652,7 @@ void imdecode() {
 
 void imencode() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
-  std::string path = root_path + "/image/660.jpg";
+  std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
 
   std::vector<uchar> buf;

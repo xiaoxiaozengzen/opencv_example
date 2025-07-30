@@ -22,7 +22,6 @@ class ZetaConan(ConanFile):
 
     def configure(self):
         # specifiy opencv options
-        # self.options["opencv"].parallel = "openmp"
         self.options["opencv"].shared = True
         self.options["opencv"].with_ffmpeg = False
         self.options["opencv"].with_tiff = False
@@ -38,6 +37,12 @@ class ZetaConan(ConanFile):
         self.options["opencv"].cudaimgproc = True
         self.options["opencv"].cudawarping = True
         self.options["opencv"].cuda_arch_bin = "7.2,7.5,8.6"
+        
+        # self.options["opencv"].objdetect = True
+        # self.options["opencv"].calib3d = True
+        # self.options["opencv"].imgproc = True
+        # self.options["opencv"].with_quirc = True
+        # self.options["opencv"].contrib = True
 
     def build_requirements(self):
         pass

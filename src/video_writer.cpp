@@ -98,7 +98,7 @@ void ConFun() {
 void MemFun() {
   // 文件拓展名加数字？直接output.avi会报一些异常错误
   std::string video_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/output_1.avi";
-  std::string image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/660.jpg";
+  std::string image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/bicycle.jpg";
   cv::Mat image = cv::imread(image_path, cv::IMREAD_COLOR);
   if(image.empty()) {
     std::cerr << "Read image failed." << std::endl;
