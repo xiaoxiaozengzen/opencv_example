@@ -38,19 +38,18 @@ class ZetaConan(ConanFile):
         self.options["opencv"].cudawarping = True
         self.options["opencv"].cuda_arch_bin = "7.2,7.5,8.6"
         
-        # self.options["opencv"].objdetect = True
-        # self.options["opencv"].calib3d = True
-        # self.options["opencv"].imgproc = True
-        # self.options["opencv"].with_quirc = True
-        # self.options["opencv"].contrib = True
+        # export CUDA_PATH and CUDA_LIB_PATH
+        self.options["opencv"].objdetect = True
+        self.options["opencv"].calib3d = True
+        self.options["opencv"].imgproc = True
+        self.options["opencv"].with_quirc = True
 
     def build_requirements(self):
         pass
 
     def requirements(self):
         self.requires("opencv/4.5.5@transformer/stable")
-
-
+        # self.requires("opencv/4.5.5")
 
     def generate(self):
         tc = CMakeToolchain(self)
