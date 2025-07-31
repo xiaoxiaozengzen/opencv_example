@@ -36,6 +36,7 @@ class ZetaConan(ConanFile):
         self.options["opencv"].dnn = True
         self.options["opencv"].cudaimgproc = True
         self.options["opencv"].cudawarping = True
+        self.options["opencv"].cudafilters = True
         self.options["opencv"].cuda_arch_bin = "7.2,7.5,8.6"
         
         # export CUDA_PATH and CUDA_LIB_PATH
