@@ -37,7 +37,7 @@ void ConFun() {
   cv::Mat mat6 = cv::Mat(2, sizes, CV_8UC4, cv::Scalar{1, 2, 3, 4}); // 创建一个2维的Mat对象, 维度大小为2行3列, type=CV_8UC3, 并初始化所有元素为scalar
   std::cout << "mat6: \n" << mat6 << std::endl;
 
-  cv::Rect rect(1, 2, 2, 2); // 创建一个Rect对象，x=1, y=2, width=1, height=1
+  cv::Rect rect(1, 2, 3, 2); // 创建一个Rect对象，x=1, y=2, width=3, height=2
   cv::Mat mat7 = cv::Mat(mat6, rect); // 创建一个mat6的子矩阵，即mat6的第2行第3列的元素
   std::cout << "mat7: \n" << mat7
             << ", mat7 size: " << mat7.size()
@@ -131,12 +131,13 @@ void PubMem() {
 
 void MemFun() {
   cv::Mat mat = cv::Mat(3, 4, CV_16UC3, cv::Scalar(0, 0, 255)); // 创建一个rows=3, cols=4, type=CV_8UC3类型的Mat对象
+  std::cout << "mat: \n" << mat << std::endl;
 
   int channels = mat.channels(); // 获取mat的通道数
   std::cout << "mat channels: " << channels << std::endl;
-  double value3 = mat.at<cv::Vec3b>(0, 2)[2]; // 获取mat的第0行第2列的第2个通道的值
-  double value2 = mat.at<cv::Vec3b>(0, 2)[1]; // 获取mat的第0行第2列的第1个通道的值
-  double value1 = mat.at<cv::Vec3b>(0, 2)[0]; // 获取mat的第0行第2列的第0个通道的值
+  double value3 = mat.at<cv::Vec<std::uint16_t, 3>>(0, 2)[2]; // 获取mat的第0行第2列的第2个通道的值，其中Vec的第一个模板参数是数据类型，第二个模板参数是通道数
+  double value2 = mat.at<cv::Vec<std::uint16_t, 3>>(0, 2)[1]; // 获取mat的第0行第2列的第1个通道的值
+  double value1 = mat.at<cv::Vec<std::uint16_t, 3>>(0, 2)[0]; // 获取mat的第0行第2列的第0个通道的值
   std::cout << "mat at: (0, 2): " << value1 << ", " << value2 << ", " << value3 << std::endl;
   cv::Mat mat2 = mat.clone(); // 复制mat，深拷贝
   cv::Mat mat3(mat); // 复制mat, 浅拷贝
@@ -145,7 +146,7 @@ void MemFun() {
             << ", mat3: " << static_cast<void*>(mat3.data)
             << std::endl;
   int type = mat.type(); // 获取mat的类型
-  std::cout << "mat type: " << type << ", CV_8UC3: " << CV_8UC3 << std::endl;
+  std::cout << "mat type: " << type << ", CV_8UC3: " << CV_8UC3 << ", CV_16UC3: " << CV_16UC3 << std::endl;
   std::size_t elemSize = mat.elemSize(); // 获取mat的每个元素的大小, channels * sizeof(unit)
   std::cout << "mat elemSize: " << elemSize << std::endl;
   std::size_t elemSize1 = mat.elemSize1(); // 获取mat的每个元素的大小, 忽略channel ,sizeof(unit)
@@ -189,6 +190,13 @@ void MemFun() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
   std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
+  std::cout << "image size: " << image.size()
+            << ", image channels: " << image.channels()
+            << ", image type: " << image.type()
+            << ", image depth: " << image.depth()
+            << ", image width: " << image.cols
+            << ", image height: " << image.rows
+            << std::endl;
 
   cv::Mat image_col = image.col(20); // 获取image的第20列
   cv::imwrite(root_path + "/output/image_col.png", image_col);
@@ -211,7 +219,7 @@ void MemFun() {
             << ", image_resize isContinuous: " << image_resize.isContinuous()
             << std::endl;
   cv::imwrite(root_path + "/output/image_resize.png", image_resize);
-  cv::Mat image_reshape = image.reshape(1); // 将image_reshape转换为通道数为1的图像，然后导致原来列数*3
+  cv::Mat image_reshape = image.reshape(1); // reshape只是重新解释当前存储数据的形状。将image_reshape转换为通道数为1的图像，然后导致原来列数*3
   std::cout << "image_reshape elemSize: " << image_reshape.elemSize() << std::endl;
   std::cout << "image_reshape channels: " << image_reshape.channels() << std::endl;
   std::cout << "image_reshape size: " << image_reshape.size()
@@ -226,9 +234,9 @@ void MemFun() {
             << ", image_reshape_row isContinuous: " << image_reshape_row.isContinuous()
             << std::endl;
   cv::imwrite(root_path + "/output/image_reshape_row.png", image_reshape_row);
-  // create会重新分配内存，而不是复制数据，并会改变矩阵的大小和/或类型
+  // create会重新分配内存，确保当前Mat有指定的尺寸和类型。如果当前Mat已经有指定的尺寸和类型，则不会重新分配内存。
   cv::Mat image_create = image.clone();
-  image_create.create(image.rows, image.cols, image.type());
+  image_create.create(image.rows - 500, image.cols - 500, image.type());
   std::cout << "image_create size: " << image_create.size()
             << ", isContinuous: " << image_create.isContinuous()
             << std::endl;
@@ -241,13 +249,18 @@ void MemFun() {
    * @param alpha 乘法因子
    * @param beta 加法因子
    * 
+   * @note 不改变通道数，会改变深度
+   * 
    * @note m(x, y) = saturate_cast<rType>(m(x, y) * alpha + beta)
    */
-  image.convertTo(image_convert, CV_8UC1, 0.5); // 将image转换为CV_8UC1类型
+  image.convertTo(image_convert, CV_8UC1, 0.5, 100); // 将image转换为CV_8UC1类型
   std::cout << "image_convert size: " << image_convert.size()
             << ", image_convert channels: " << image_convert.channels()
             << std::endl;
   cv::imwrite(root_path + "/output/image_convert.png", image_convert);
+  cv::Mat image_convert_depth = cv::Mat(image.size(), CV_16UC3); // 创建一个和image大小一样的CV_16UC3类型的Mat对象
+  image.convertTo(image_convert_depth, CV_16UC3, 256); // 将image转换为CV_16UC3类型，通道值也要做相应的映射，可以保证图片不变：65535/255=256
+  cv::imwrite(root_path + "/output/image_convert_depth.png", image_convert_depth);
 }
 
 void GlobalFun() {
