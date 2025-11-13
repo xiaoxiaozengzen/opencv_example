@@ -185,6 +185,18 @@ void MemFun() {
   std::cout << "mat7: \n" << mat7 << std::endl;
   cv::Mat mat8 = cv::Mat::ones(cv::Size(3, 3), CV_8UC1); // 创建一个3*3的全1矩阵
   std::cout << "mat8: \n" << mat8 << std::endl;
+  for(int i = 0; i < mat5.rows; i++) {
+    for(int j = 0; j < mat5.cols; j++) {
+      uint8_t* ptr = mat5.ptr<uint8_t>(i); // 获取mat的第i行的指针
+      std::cout << "mat5 (" << i << ", " << j << "): " << static_cast<int>(ptr[j]) << std::endl;
+    }
+  }
+  uint16_t* ptr = mat.ptr<uint16_t>(1); // 获取mat的第1行的指针
+  std::cout << "mat row 1: ";
+  for(int j = 0; j < mat.cols * mat.channels(); j++) {
+    std::cout << static_cast<int>(ptr[j]) << " ";
+  }
+  std::cout << std::endl;
 
   // cv::Mat的对图片的操作
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
@@ -268,37 +280,87 @@ void GlobalFun() {
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
   std::string path = root_path + "/image/bicycle.jpg";
   cv::Mat image = cv::imread(path, cv::IMREAD_COLOR);
+  std::cout << "Source image size: " << image.size()
+            << ", image channels: " << image.channels()
+            << ", image type: " << image.type()
+            << ", image depth: " << image.depth()
+            << ", image width: " << image.cols
+            << ", image height: " << image.rows
+            << std::endl;
 
   /**********************************cv::remap*********************************************/
   std::cout << "/*************cv::remap***************/" << std::endl;
-  // remap函数，对图像进行重映射. 重新映射图像的像素值，例如图像的旋转、缩放、平移等
-  double angle = 90.0; // 旋转角度
-  cv::Point2f center(image.cols / 2, image.rows / 2); // 旋转中心
-  cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0); // 获取旋转矩阵
-  cv::Mat map1(image.size(), CV_32FC1); // 创建一个和image大小一样的CV_32FC1类型的Mat对象
-  cv::Mat map2(image.size(), CV_32FC1); // 创建一个和image大小一样的CV_32FC1类型的Mat对象
-  for(int y = 0; y < image.rows; y++) {
-    for(int x = 0; x < image.cols; x++) {
-      cv::Point2f p(x, y); // 创建一个点
-      cv::Point2f new_p = cv::Point2f(rot.at<double>(0, 0) * p.x + rot.at<double>(0, 1) * p.y + rot.at<double>(0, 2),
-                                      rot.at<double>(1, 0) * p.x + rot.at<double>(1, 1) * p.y + rot.at<double>(1, 2)); // 旋转后的点
-      map1.at<float>(y, x) = new_p.x; // x坐标的映射
-      map2.at<float>(y, x) = new_p.y; // y坐标的映射
+  // remap函数，对图像进行重映射。即将一张图像的像素值重新映射到另一张新图像上。
+  // 为了实现映射处理，对于非整数坐标的像素位置，需要通过插值计算出对应的像素值。因为源图到目标图像的像素可能不是一一对应的关系。
+  // g(x, y) = f(h(x, y)), 其中g是目标图像，f是源图像，h是映射函数。
+  // opencv提供了多种重映射方法，但是remap函数是最通用的，可以实现任意的重映射。
+  double scale_w = 2.0; // 水平缩放因子
+  double scale_h = 1.0; // 垂直缩放因子
+  cv::Size dst_size(static_cast<int>(image.cols * scale_w), static_cast<int>(image.rows * scale_h)); // 新图像的大小
+  cv::Mat map1(dst_size, CV_32FC1); // 创建一个和src大小一样的CV_32FC1类型的Mat对象
+  cv::Mat map2(dst_size, CV_32FC1); // 创建一个和src大小一样的CV_32FC1类型的Mat对象
+  for(int y = 0; y < dst_size.height; y++) {
+    float* p1 = map1.ptr<float>(y); // 获取map1的第y行的指针
+    float* p2 = map2.ptr<float>(y); // 获取map2的第y行的指针
+    for(int x = 0; x < dst_size.width; x++) {
+      p1[x] = static_cast<float>(x / scale_w); // 计算映射后的x坐标
+      p2[x] = static_cast<float>(y / scale_h); // 计算映射后的y坐标
     }
-
   }
-  cv::Mat remap_rotated; // 创建一个空的Mat对象
+  cv::Mat remap_rotated;
   /**
    * @param src 输入图像
-   * @param dst 输出图像, size和map1一样，type和src一样
-   * @param map_1 第一个映射矩阵，即x坐标的映射
-   * @param map_2 第二个映射矩阵，即y坐标的映射
+   * @param dst 输出图像, size跟map_1和map_2一样，type和src一样
+   * @param map_1 第一个映射矩阵，x坐标方向的映射。
+   * @param map_2 第二个映射矩阵，y坐标方向的映射。
    * @param interpolation 插值方法
    * @param borderMode 边界模式
    * @param borderValue 边界值
+   *
+   * @note remap对目标图片的像素dst(x, y)，通过map_1和map_2获取src像素点(u, v)，然后通过插值计算src(u, v)的值赋值给dst(x, y)
+   *       因为对于每个目标像素dst(x, y)，都需要一个浮点的源x和y，所以需要两张相同大小的矩阵，一张存储x坐标映射，另一张存储y坐标映射。
    */
   cv::remap(image, remap_rotated, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
-  cv::imwrite(root_path + "/output/remap_rotated.png", remap_rotated);
+  cv::imwrite(root_path + "/output/image_remap.png", remap_rotated);
+
+  /**********************************cv::warpAffine*********************************************/
+  std::cout << "/*************cv::warpAffine***************/" << std::endl;
+  // warpAffine函数，对图像进行仿射变换. 重新映射图像的像素值，例如图像的旋转、缩放、平移等
+  double angle1 = 45.0; // 旋转角度
+  cv::Point2f center1(image.cols / 2, image.rows / 2); // 旋转中心
+  cv::Mat rot1 = cv::getRotationMatrix2D(center1, angle1, 2.0); // 获取旋转矩阵，第三个参数是缩放因子scale。会返回一个2x3的仿射变
+  std::cout << "Rotation Matrix: \n" << rot1 << std::endl;
+  cv::Mat warp_affine_rotated; // 创建一个空的Mat对象
+  /**
+   * @param src 输入图像
+   * @param dst 输出图像, size和dsize一样，type和src一样
+   * @param M 仿射变换矩阵
+   * @param dsize 输出图像的大小
+   * @param flags 插值方法
+   * @param borderMode 边界模式
+   * @param borderValue 边界值
+   */
+  cv::warpAffine(image, warp_affine_rotated, rot1, image.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
+  cv::imwrite(root_path + "/output/image_warp_affine_rotated_45.png", warp_affine_rotated);
+
+  /**********************************cv::Resize*********************************************/
+  std::cout << "/*************cv::Resize***************/" << std::endl;
+  // Resize函数，调整图像的大小
+  cv::Mat resized_image; // 创建一个空的Mat对象
+  cv::Size resized_size(static_cast<int>(image.cols * 1), static_cast<int>(image.rows * 0.5)); // 新图像的大小
+  /**
+   * @param src 输入图像
+   * @param dst 输出图像, size和dsize一样，type和src一样
+   * @param dsize 输出图像的大小,若为0，则通过fx和fy计算
+   * @param fx 水平缩放因子
+   * @param fy 垂直缩放因子
+   * @param interpolation 插值方法
+   */
+  cv::resize(image, resized_image, resized_size, 0, 0, cv::INTER_LINEAR); // 调整图像大小
+  cv::imwrite(root_path + "/output/image_resized.png", resized_image);
+  cv::Mat resized_image_fx_fy; // 创建一个空的Mat对象
+  cv::resize(image, resized_image_fx_fy, cv::Size(), 1.5, 0.5, cv::INTER_LINEAR); // 调整图像大小
+  cv::imwrite(root_path + "/output/image_resized_fx_fy.png", resized_image_fx_fy);
 
   /**********************************cv::Rect*********************************************/
   std::cout << "/*************cv::Rect***************/" << std::endl;
