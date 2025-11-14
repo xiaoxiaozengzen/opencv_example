@@ -197,6 +197,8 @@ void MemFun() {
     std::cout << static_cast<int>(ptr[j]) << " ";
   }
   std::cout << std::endl;
+  uint16_t* ptr2 = mat.ptr<uint16_t>(0, 2); // 获取mat的第0行第2列的指针
+  std::cout << "mat (0, 2) 0: " << *ptr2 << ", 1: " << *(ptr2 + 1) << ", 2: " << *(ptr2 + 2) << std::endl;
 
   // cv::Mat的对图片的操作
   std::string root_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example";
