@@ -290,6 +290,65 @@ void GlobalFun() {
             << ", image height: " << image.rows
             << std::endl;
 
+  /**********************************cv::warpAffine*********************************************/
+  std::cout << "/*************cv::warpAffine***************/" << std::endl;
+  // warpAffine函数，对图像进行仿射变换. 重新映射图像的像素值，例如图像的旋转、缩放、平移等
+  double angle1 = 45.0; // 旋转角度
+  cv::Point2f center1(image.cols / 2, image.rows / 2); // 旋转中心
+  cv::Mat rot1 = cv::getRotationMatrix2D(center1, angle1, 2.0); // 获取旋转矩阵，第三个参数是缩放因子scale。会返回一个2x3的仿射变
+  double angle2 = 0.0;
+  cv::Point2f center2(0, 0);
+  cv::Mat rot2 = cv::getRotationMatrix2D(center2, angle2, 1.0); // 获取旋转矩阵，第三个参数是缩放因子scale。会返回一个2x3的仿射变
+  double translate_x = 500.0; // 平移距离x
+  double translate_y = 200.0;  // 平移距离y
+  rot2.at<double>(0, 2) += translate_x; // 设置平移距离x
+  rot2.at<double>(1, 2) += translate_y; // 设置平移距离y
+  std::cout << "Rotation Matrix: \n" << rot1 << std::endl;
+  std::cout << "Rotation + Translation Matrix: \n" << rot2 << std::endl;
+  cv::Mat warp_affine_rotated; // 创建一个空的Mat对象
+  /**
+   * @param src 输入图像
+   * @param dst 输出图像, size和dsize一样，type和src一样
+   * @param M 仿射变换矩阵
+   * @param dsize 输出图像的大小
+   * @param flags 插值方法
+   * @param borderMode 边界模式
+   * @param borderValue 边界值
+   */
+  cv::warpAffine(image, warp_affine_rotated, rot1, image.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
+  cv::imwrite(root_path + "/output/image_warp_affine_rotated_45.png", warp_affine_rotated);
+  cv::Mat warp_affine_rotated_translated; // 创建一个空的Mat对象
+  cv::warpAffine(image, warp_affine_rotated_translated, rot2, image.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
+  cv::imwrite(root_path + "/output/image_warp_affine_rotated_0_translated.png", warp_affine_rotated_translated);
+
+  /**********************************cv::warpPerspective*********************************************/
+  std::cout << "/*************cv::warpPerspective***************/" << std::endl;
+  // warpPerspective函数，对图像进行透视变换. 重新映射图像的像素值，例如图像的旋转、缩放、平移等
+  std::vector<cv::Point2f> src_points; // 源图像的四个点
+  src_points.emplace_back(0.0f, 0.0f);
+  src_points.emplace_back(static_cast<float>(image.cols - 1), 0.0f);
+  src_points.emplace_back(static_cast<float>(image.cols - 1), static_cast<float>(image.rows - 1));
+  src_points.emplace_back(0.0f, static_cast<float>(image.rows - 1));
+  std::vector<cv::Point2f> dst_points; // 目标图像的四个点
+  dst_points.emplace_back(0.0f, 0.0f);
+  dst_points.emplace_back(static_cast<float>(image.cols - 1), 100.0f);
+  dst_points.emplace_back(static_cast<float>(image.cols - 100), static_cast<float>(image.rows - 1));
+  dst_points.emplace_back(100.0f, static_cast<float>(image.rows - 1));
+  cv::Mat perspective_matrix = cv::getPerspectiveTransform(src_points, dst_points); // 获取透视变换矩阵。会返回一个3x3的透视变换矩阵
+  std::cout << "Perspective Matrix: \n" << perspective_matrix << std::endl;
+  cv::Mat warp_perspective_image; // 创建一个空的Mat对象
+  /**
+   * @param src 输入图像
+   * @param dst 输出图像, size和dsize一样，type和src一样
+   * @param M 透视变换矩阵, 3x3矩阵
+   * @param dsize 输出图像的大小
+   * @param flags 插值方法
+   * @param borderMode 边界模式
+   * @param borderValue 边界值
+   */
+  cv::warpPerspective(image, warp_perspective_image, perspective_matrix, image.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
+  cv::imwrite(root_path + "/output/image_warp_perspective.png", warp_perspective_image);
+  
   /**********************************cv::remap*********************************************/
   std::cout << "/*************cv::remap***************/" << std::endl;
   // remap函数，对图像进行重映射。即将一张图像的像素值重新映射到另一张新图像上。
@@ -324,26 +383,6 @@ void GlobalFun() {
    */
   cv::remap(image, remap_rotated, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
   cv::imwrite(root_path + "/output/image_remap.png", remap_rotated);
-
-  /**********************************cv::warpAffine*********************************************/
-  std::cout << "/*************cv::warpAffine***************/" << std::endl;
-  // warpAffine函数，对图像进行仿射变换. 重新映射图像的像素值，例如图像的旋转、缩放、平移等
-  double angle1 = 45.0; // 旋转角度
-  cv::Point2f center1(image.cols / 2, image.rows / 2); // 旋转中心
-  cv::Mat rot1 = cv::getRotationMatrix2D(center1, angle1, 2.0); // 获取旋转矩阵，第三个参数是缩放因子scale。会返回一个2x3的仿射变
-  std::cout << "Rotation Matrix: \n" << rot1 << std::endl;
-  cv::Mat warp_affine_rotated; // 创建一个空的Mat对象
-  /**
-   * @param src 输入图像
-   * @param dst 输出图像, size和dsize一样，type和src一样
-   * @param M 仿射变换矩阵
-   * @param dsize 输出图像的大小
-   * @param flags 插值方法
-   * @param borderMode 边界模式
-   * @param borderValue 边界值
-   */
-  cv::warpAffine(image, warp_affine_rotated, rot1, image.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0));
-  cv::imwrite(root_path + "/output/image_warp_affine_rotated_45.png", warp_affine_rotated);
 
   /**********************************cv::Resize*********************************************/
   std::cout << "/*************cv::Resize***************/" << std::endl;
@@ -414,6 +453,23 @@ void GlobalFun() {
             << std::endl;
   cv::imwrite(root_path + "/output/image_rect.png", image_rect);
 
+  /**********************************cv::copyMakeBorder*********************************************/
+  std::cout << "/*************cv::copyMakeBorder***************/" << std::endl;
+  // 将原图拷贝到新图的中间，并对上下左右进行边界扩展
+  cv::Mat image_border; // 创建一个空的Mat对象
+  /**
+   * @param src 输入图像
+   * @param dst 输出图像, size和src不一样，type和src一样
+   * @param top 上边界扩展的像素数
+   * @param bottom 下边界扩展的像素数
+   * @param left 左边界扩展的像素数
+   * @param right 右边界扩展的像素数
+   * @param borderType 边界类型
+   * @param value 边界值
+   */
+  cv::copyMakeBorder(image, image_border, 50, 100, 150, 200, cv::BORDER_CONSTANT, cv::Scalar(255, 0, 0)); // 对image进行边界扩展
+  cv::imwrite(root_path + "/output/image_border.png", image_border);
+
   /**********************************cv::split*********************************************/
   std::cout << "/*************cv::split***************/" << std::endl;
   // split函数，将多通道图像分割成多个单通道图像
@@ -454,6 +510,26 @@ void GlobalFun() {
   cv::Mat image_flip;
   cv::flip(image, image_flip, 1); // 对image进行水平翻转：1表示水平翻转(沿y轴)，0表示垂直翻转(沿x轴)，-1表示水平垂直翻转
   cv::imwrite(root_path + "/output/image_flip.png", image_flip);
+
+  /**********************************cv::rotate*********************************************/
+  std::cout << "/*************cv::rotate***************/" << std::endl;
+  // rotate函数，对图像进行旋转(图像的size保持不变，只能是90的倍数)
+  cv::Mat image_rotate;
+  cv::rotate(image, image_rotate, cv::ROTATE_90_CLOCKWISE); // 对image进行顺时针旋转90度
+  cv::imwrite(root_path + "/output/image_rotate_90_clockwise.png", image_rotate);
+  cv::Mat image_rotate_270;
+  cv::rotate(image, image_rotate_270, cv::ROTATE_90_COUNTERCLOCKWISE); // 对image进行逆时针旋转90度
+  cv::imwrite(root_path + "/output/image_rotate_90_counterclockwise.png", image_rotate_270);
+
+  /**********************************cv::transpose*********************************************/
+  std::cout << "/*************cv::transpose***************/" << std::endl;
+  // transpose函数，对图像进行转置。相当于先逆时针旋转90度，再翻转
+  cv::Mat image_transpose;
+  cv::transpose(image, image_transpose); // 对image进行转置
+  std::cout << "image_transpose size: " << image_transpose.size()
+            << ", image size: " << image.size()
+            << std::endl;
+  cv::imwrite(root_path + "/output/image_transpose.png", image_transpose);
 
   /**********************************cv::vconcat*********************************************/
   std::cout << "/*************cv::vconcat***************/" << std::endl;
