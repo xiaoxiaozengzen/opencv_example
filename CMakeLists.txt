@@ -20,3 +20,7 @@ target_include_directories(video_writer_exe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/i
 target_link_libraries(video_writer_exe ${OpenCV_LIBRARIES})
 
 add_subdirectory(cuda_example)
+
+add_executable(raw_image ${CMAKE_CURRENT_SOURCE_DIR}/src/raw_image.cpp)
+target_include_directories(raw_image PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(raw_image ${OpenCV_LIBRARIES})
