@@ -24,3 +24,7 @@ add_subdirectory(cuda_example)
 add_executable(raw_image ${CMAKE_CURRENT_SOURCE_DIR}/src/raw_image.cpp)
 target_include_directories(raw_image PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(raw_image ${OpenCV_LIBRARIES})
+
+add_executable(undistor ${CMAKE_CURRENT_SOURCE_DIR}/src/undistor.cpp)
+target_include_directories(undistor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(undistor ${OpenCV_LIBRARIES})

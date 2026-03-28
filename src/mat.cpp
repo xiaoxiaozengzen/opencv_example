@@ -412,7 +412,7 @@ void GlobalFun() {
    * @param width 矩形的宽度
    * @param height 矩形的高度
    */
-  cv::Rect rect(1, 2, 4, 3); // 创建一个Rect对象，x=1, y=2, width=3, height=3
+  cv::Rect rect(1, 2, 4, 3); // 创建一个Rect对象，x=1, y=2, width=4, height=3
   std::cout << "rect: \n" << rect << std::endl;
   double area = rect.area(); // 获取rect的面积
   std::cout << "rect area: " << area << std::endl;
