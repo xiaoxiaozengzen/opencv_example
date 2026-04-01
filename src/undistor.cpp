@@ -18,7 +18,8 @@
  *      当前的getOptimalNewCameraMatrix/initUndistortRectifyMap/remap
  *      适用于常规透视相机模型(针孔模型)，不适用鱼眼
  * 2.鱼眼相机模型的畸变矫正：
- *      OpenCV提供了专门针对鱼眼相机模型的函数，如fisheye::estimateNewCameraMatrixForUndistortRectify和fisheye::initUndist
+ *      OpenCV提供了专门针对鱼眼相机模型的函数，
+ *      如fisheye::estimateNewCameraMatrixForUndistortRectify和fisheye::initUndist
  */
 
 void fw_undistor_sequnce() {
@@ -270,6 +271,65 @@ void fl_fisheye_undistor_sequnce() {
     cv::imwrite(output_image_path, undistorted_image_bgr);
 }
 
+void sfl_fisheye_undistor_sequnce() {
+    // fl相机内参矩阵
+    cv::Mat k = (cv::Mat_<double>(3, 3) << 526.563, 0, 478.093
+                                            , 0, 526.652, 255.934
+                                            , 0, 0, 1);
+    // fl相机的畸变系数
+    std::vector<double> dist_coeffs = {-0.0128233, -0.0098962, 0.0130589, -0.00157833};
+    cv::Mat dist_coeffs_mat = cv::Mat(dist_coeffs); // 将dist_coeffs转换为Mat对象
+    // fl相机的分辨率
+    int width = 960;
+    int height = 512;
+    cv::Size image_size(width, height);
+
+    // 参数设置
+    double balance = 1.0;
+    cv::Size new_image_size = image_size;
+    cv::Mat new_camera_matrix = cv::Mat();
+
+    // 得到新的相机内参矩阵
+    cv::fisheye::estimateNewCameraMatrixForUndistortRectify(k, dist_coeffs_mat, image_size, cv::Mat(), new_camera_matrix, balance, new_image_size, 1.0);
+    std::cout << "new_camera_matrix: \n" << new_camera_matrix << std::endl;
+    
+    // 计算畸变矫正映射
+    cv::Mat map1, map2;
+    cv::fisheye::initUndistortRectifyMap(k, dist_coeffs_mat, cv::Mat(), new_camera_matrix, new_image_size, CV_32FC1, map1, map2);
+    std::cout << "map1 size: " << map1.size() << ", map1 type: " << map1.type() << std::endl;
+    std::cout << "map2 size: " << map2.size() << ", map2 type: " << map2.type() << std::endl;
+    
+    // 使用remap函数进行去畸变
+    std::string input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/sidefrontleft_960_512_420p.yuv";
+    int input_image_width = 960;
+    int input_image_height = 512;
+    std::ifstream input_image_stream(input_image_path, std::ios::binary | std::ios::ate);
+    if(!input_image_stream.is_open()) {
+        std::cerr << "Could not open input image file: " << input_image_path << std::endl;
+        return;
+    }
+    std::streamsize input_image_size = input_image_stream.tellg();
+    std::cout << "Input image size: " << input_image_size << " bytes." << std::endl;
+    input_image_stream.seekg(0, std::ios::beg);
+    if(input_image_size != input_image_width * input_image_height * 3 / 2) {
+        std::cerr << "Input image size does not match expected size: " << input_image_size << " bytes." << std::endl;
+        return;
+    }
+    std::vector<unsigned char> input_image_data(input_image_size);
+    if(!input_image_stream.read(reinterpret_cast<char*>(input_image_data.data()), input_image_size)) {
+        std::cerr << "Error reading input image file: " << input_image_path << std::endl;
+        return;
+    }
+    cv::Mat input_image(input_image_height + input_image_height / 2, input_image_width, CV_8UC1, input_image_data.data());
+    cv::Mat input_image_bgr;
+    cv::cvtColor(input_image, input_image_bgr, cv::COLOR_YUV2BGR_I420); // YUV420格式转换为BGR格式
+    cv::imwrite("/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sidefrontleft_960_512_420p_fisheye_bgr.jpg", input_image_bgr);
+    cv::Mat undistorted_image_bgr;
+    cv::remap(input_image_bgr, undistorted_image_bgr, map1, map2, cv::INTER_LINEAR);
+    std::string output_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sidefrontleft_960_512_420p_fisheye.jpg";
+    cv::imwrite(output_image_path, undistorted_image_bgr);    
+}
+
 int main() {
     std::cout << "======================== fw_undistor_sequnce ========================" << std::endl;
     fw_undistor_sequnce();
@@ -277,6 +337,8 @@ int main() {
     fw_fisheye_undistor_sequnce();
     std::cout << "======================== fl_fisheye_undistor_sequnce ========================" << std::endl;
     fl_fisheye_undistor_sequnce();
+    std::cout << "======================== sfl_fisheye_undistor_sequnce ========================" << std::endl;
+    sfl_fisheye_undistor_sequnce();
 
     return 0;
 }
