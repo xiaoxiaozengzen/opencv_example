@@ -28,3 +28,7 @@ target_link_libraries(raw_image ${OpenCV_LIBRARIES})
 add_executable(undistor ${CMAKE_CURRENT_SOURCE_DIR}/src/undistor.cpp)
 target_include_directories(undistor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(undistor ${OpenCV_LIBRARIES})
+
+add_executable(nchw2yuv ${CMAKE_CURRENT_SOURCE_DIR}/src/nchw2yuv.cpp)
+target_include_directories(nchw2yuv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(nchw2yuv ${OpenCV_LIBRARIES})
