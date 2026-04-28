@@ -26,6 +26,36 @@
  *  2.畸变系数通常不需要调整，为它们是归一化坐标下的参数，和分辨率无关。
  */
 
+ /**
+  * 1. FrontWide:
+  *      - fx:1906.6, fy:1906.18, cx:1923.26, cy:1022.45
+  *      - k1:-0.0299548, k2:-0.00364585, p1:-0.00155829, p2:0.00104736
+  *      - 3840x2048
+  * 2. FrontLong:
+  *      - fx:7328.27, fy:7329.37, cx:1899.02, cy:997.359
+  *      - k1:0.205114, k2:-4.08226, p1:40.0991, p2:-165.095
+  *      - 3840x2048
+  * 3.Rear:
+  *      - fx:1100.54, fy:1100.49, cx:963.113, cy:508.711
+  *      - k1:-0.00767063, k2:0.00487208, p1:-0.00427585, p2:0.0095581
+  *      - 1920x1024
+  * 4.SideLeftFront:
+  *      - fx=526.563, fy=526.652, cx=478.093, cy=255.934
+  *      - -0.0128233, -0.0098962, 0.0130589, -0.00157833
+  *      - 960x512
+  * 5.SideLeftRear:
+  *      - fx=526.854, fy=526.877, cx=479.752, cy=255.504
+  *      - -0.0148726, -0.00231126, 0.00333634, 0.00283011
+  *      - 960x512
+  * 6.SideRightFront:
+  *      - fx=526.774, fy=526.745, cx=480.695, cy=254.451
+  *      - -0.0151338, -0.00391945, 0.00588716, 0.0013771
+  *      - 960x512
+  * 7.SideRightRear:
+  *      - fx=526.298, fy=526.323, cx=481.244, cy=254.291
+  *      - -0.0138223, -0.00853396, 0.0121397, -0.00161409
+  *      - 960x512
+  */
 struct CameraParams {
     cv::Mat K; // 内参矩阵
     std::vector<double> dist_coeffs; // 畸变系数
@@ -194,7 +224,7 @@ void fw_pinhole_undistor_sequnce() {
     std::cout << "map2 size: " << map2.size() << ", map2 type: " << map2.type() << std::endl;
 
     // 使用remap函数进行去畸变
-    std::string input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/frontwide_3840_2048_nv12.yuv";
+    std::string input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/frontwide_3840_2048_nv12.yuv";
     int input_image_width = 3840;
     int input_image_height = 2048;
     std::ifstream input_image_stream(input_image_path, std::ios::binary | std::ios::ate);
@@ -258,7 +288,7 @@ void fw_fisheye_undistor_sequnce() {
     params.ori_image_size = image_size;
     params.undistorted_image_size = new_image_size;
     params.balance = balance;
-    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/frontwide_3840_2048_nv12.yuv";
+    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/frontwide_3840_2048_nv12.yuv";
     params.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontwide_3840_2048_nv12_bgr.jpg";
     params.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontwide_3840_2048_nv12_undistorted.jpg";
     
@@ -289,7 +319,7 @@ void fl_fisheye_undistor_sequnce() {
     params.ori_image_size = image_size;
     params.undistorted_image_size = new_image_size;
     params.balance = balance;
-    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/frontlong_3840_2048_nv12.yuv";
+    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/frontlong_3840_2048_nv12.yuv";
     params.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontlong_3840_2048_nv12_bgr.jpg";
     params.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontlong_3840_2048_nv12_undistorted.jpg";
 
@@ -320,7 +350,7 @@ void sfl_fisheye_undistor_sequnce() {
     params.ori_image_size = image_size;
     params.undistorted_image_size = new_image_size;
     params.balance = balance;
-    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/sidefrontleft_960_512_nv12.yuv";
+    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/sidefrontleft_960_512_nv12.yuv";
     params.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sidefrontleft_960_512_nv12_bgr.jpg";
     params.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sidefrontleft_960_512_nv12_undistorted.jpg";
 
