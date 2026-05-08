@@ -19,7 +19,10 @@
  *      适用于常规透视相机模型(针孔模型)，不适用鱼眼
  * 2.鱼眼相机模型的畸变矫正：
  *      OpenCV提供了专门针对鱼眼相机模型的函数，
- *      如fisheye::estimateNewCameraMatrixForUndistortRectify和fisheye::initUndist
+ *      如fisheye::estimateNewCameraMatrixForUndistortRectify和fisheye::initUndistortRectifyMap
+ * 3.OCAM(omnidirectional camera model, 全向相机模型)：
+ *      比普通的鱼眼模型更泛化，适合超大视场甚至接近全向镜头
+ *      不再是简单的针孔或者鱼眼畸变模型能解决的，而是直接使用多项式去描述畸变关系
  *
  * resize会改变图像的尺寸：
  *  1.相机内参中的焦距和主点坐标也需要相应地进行缩放。fx和fy需要乘以水平和垂直的缩放因子，cx和cy也需要乘以相应的缩放因子。
@@ -31,30 +34,42 @@
   *      - fx:1906.6, fy:1906.18, cx:1923.26, cy:1022.45
   *      - k1:-0.0299548, k2:-0.00364585, p1:-0.00155829, p2:0.00104736
   *      - 3840x2048
+  *      - fisheye
   * 2. FrontLong:
   *      - fx:7328.27, fy:7329.37, cx:1899.02, cy:997.359
   *      - k1:0.205114, k2:-4.08226, p1:40.0991, p2:-165.095
   *      - 3840x2048
+  *      - fisheye
   * 3.Rear:
   *      - fx:1100.54, fy:1100.49, cx:963.113, cy:508.711
   *      - k1:-0.00767063, k2:0.00487208, p1:-0.00427585, p2:0.0095581
   *      - 1920x1024
+  *      - fisheye
   * 4.SideLeftFront:
   *      - fx=526.563, fy=526.652, cx=478.093, cy=255.934
   *      - -0.0128233, -0.0098962, 0.0130589, -0.00157833
   *      - 960x512
+  *      - fisheye
   * 5.SideLeftRear:
   *      - fx=526.854, fy=526.877, cx=479.752, cy=255.504
   *      - -0.0148726, -0.00231126, 0.00333634, 0.00283011
   *      - 960x512
+  *      - fisheye
   * 6.SideRightFront:
   *      - fx=526.774, fy=526.745, cx=480.695, cy=254.451
   *      - -0.0151338, -0.00391945, 0.00588716, 0.0013771
   *      - 960x512
+  *      - fisheye
   * 7.SideRightRear:
   *      - fx=526.298, fy=526.323, cx=481.244, cy=254.291
   *      - -0.0138223, -0.00853396, 0.0121397, -0.00161409
   *      - 960x512
+  *      - fisheye
+  * 8.Infrared:
+  *      - fx=742.425, fy=742.425, cx=316.808, cy=253.326
+  *      - -0.303234, 0.053968, -0.001405, -0.000301, 0.0
+  *      - 640x512
+  *      - pinhole
   */
 struct CameraParams {
     cv::Mat K; // 内参矩阵
@@ -166,17 +181,17 @@ void fisheye_undistor_sequnce(const CameraParams& params) {
     std::cout << "Saved undistorted image to: " << output_undistorted_image_path << std::endl; 
 }
 
-void fw_pinhole_undistor_sequnce() {
-    // FW相机内参矩阵
-    cv::Mat k = (cv::Mat_<double>(3, 3) << 1906.6, 0, 1923.26
-                                            , 0, 1906.18, 1022.45
+void infrared_pinhole_undistor_sequnce() {
+    // 红外相机内参矩阵
+    cv::Mat k = (cv::Mat_<double>(3, 3) << 742.425, 0, 316.808
+                                            , 0, 742.425, 253.326
                                             , 0, 0, 1);
-    // FW相机的畸变系数
-    std::vector<double> dist_coeffs = {-0.0299548, -0.00364585, -0.00155829, 0.00104736};
+    // 红外相机的畸变系数
+    std::vector<double> dist_coeffs = {-0.303234, 0.053968, -0.001405, -0.000301, 0.0};
     cv::Mat dist_coeffs_mat = cv::Mat(dist_coeffs); // 将dist_coeffs转换为Mat对象
-    // FW相机的分辨率
-    int width = 3840;
-    int height = 2048;
+    // 红外相机的分辨率
+    int width = 640;
+    int height = 512;
     cv::Size image_size(width, height);
 
     // 参数设置
@@ -224,9 +239,9 @@ void fw_pinhole_undistor_sequnce() {
     std::cout << "map2 size: " << map2.size() << ", map2 type: " << map2.type() << std::endl;
 
     // 使用remap函数进行去畸变
-    std::string input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/frontwide_3840_2048_nv12.yuv";
-    int input_image_width = 3840;
-    int input_image_height = 2048;
+    std::string input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/infrared_640_512_nv12.yuv";
+    int input_image_width = 640;
+    int input_image_height = 512;
     std::ifstream input_image_stream(input_image_path, std::ios::binary | std::ios::ate);
     if(!input_image_stream.is_open()) {
         std::cerr << "Could not open input image file: " << input_image_path << std::endl;
@@ -247,6 +262,9 @@ void fw_pinhole_undistor_sequnce() {
     cv::Mat input_image(input_image_height + input_image_height / 2, input_image_width, CV_8UC1, input_image_data.data());
     cv::Mat input_image_bgr;
     cv::cvtColor(input_image, input_image_bgr, cv::COLOR_YUV2BGR_NV12); // NV12格式转换为BGR格式
+    std::string output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/infrared_640_512_nv12_bgr.jpg";
+    cv::imwrite(output_input_image_path, input_image_bgr);
+    std::cout << "Saved input image in BGR format to: " << output_input_image_path << std::endl;
     cv::Mat undistorted_image_bgr;
 
     /**
@@ -260,8 +278,9 @@ void fw_pinhole_undistor_sequnce() {
      * @param borderValue 边界值，默认为Scalar()
      */
     cv::remap(input_image_bgr, undistorted_image_bgr, map1, map2, cv::INTER_LINEAR);
-    std::string output_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontwide_3840_2048_nv12_pinhole_undistorted.jpg";
+    std::string output_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/infrared_640_512_nv12_pinhole_undistorted.jpg";
     cv::imwrite(output_image_path, undistorted_image_bgr);
+    std::cout << "Saved undistorted image to: " << output_image_path << std::endl;
 }
 
 void fw_fisheye_undistor_sequnce() {
@@ -350,16 +369,16 @@ void sfl_fisheye_undistor_sequnce() {
     params.ori_image_size = image_size;
     params.undistorted_image_size = new_image_size;
     params.balance = balance;
-    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/sidefrontleft_960_512_nv12.yuv";
-    params.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sidefrontleft_960_512_nv12_bgr.jpg";
-    params.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sidefrontleft_960_512_nv12_undistorted.jpg";
+    params.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/sideleftfront_960_512_nv12.yuv";
+    params.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sideleftfront_960_512_nv12_bgr.jpg";
+    params.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/sideleftfront_960_512_nv12_undistorted.jpg";
 
     fisheye_undistor_sequnce(params); 
 }
 
 int main() {
-    std::cout << "======================== fw_pinhole_undistor_sequnce ========================" << std::endl;
-    fw_pinhole_undistor_sequnce();
+    std::cout << "======================== infrared_pinhole_undistor_sequnce ========================" << std::endl;
+    infrared_pinhole_undistor_sequnce();
     std::cout << "======================== fw_fisheye_undistor_sequnce ========================" << std::endl;
     fw_fisheye_undistor_sequnce();
     std::cout << "======================== fl_fisheye_undistor_sequnce ========================" << std::endl;
