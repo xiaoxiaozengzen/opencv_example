@@ -376,6 +376,76 @@ void sfl_fisheye_undistor_sequnce() {
     fisheye_undistor_sequnce(params); 
 }
 
+/**
+ * 将理想模型下的无畸变图片，映射成鱼眼镜头下的畸变图片，验证畸变模型的正确性
+ */
+void fisheye_distort() {
+    std::string input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontwide_3840_2048_nv12_undistorted.jpg";
+    cv::Mat input_image = cv::imread(input_image_path, cv::IMREAD_COLOR);
+    if(input_image.empty()) {
+        std::cerr << "Could not read input image: " << input_image_path << std::endl;
+        return;
+    }
+    std::cout << "Input image path: " << input_image_path << std::endl;
+    std::cout << "Input image size: " << input_image.size() << ", channels: " << input_image.channels() << std::endl;
+
+    if(input_image.size() != cv::Size(3840, 2048)) {
+        std::cerr << "Input image size does not match expected size: " << input_image.size() << std::endl;
+        return;
+    }
+
+    // FW相机内参矩阵
+    cv::Mat k = (cv::Mat_<double>(3, 3) << 1906.6, 0, 1923.26
+                                            , 0, 1906.18, 1022.45
+                                            , 0, 0, 1);
+    // FW相机的畸变系数
+    std::vector<double> dist_coeffs = {-0.0299548, -0.00364585, -0.00155829, 0.00104736};
+    cv::Mat dist_coeffs_mat = cv::Mat(dist_coeffs); // 将dist_coeffs转换为Mat对象
+    // FW相机的分辨率
+    int width = 3840;
+    int height = 2048;
+    // FW 去畸变图像对应的内参矩阵
+    cv::Mat new_camera_matrix = (cv::Mat_<double>(3, 3) << 1108.406286393554, 0, 1925.365853013935
+                                            , 0, 1108.162118429489, 1022.594463401068
+                                            , 0, 0, 1);
+    double fx_new = new_camera_matrix.at<double>(0, 0);
+    double fy_new = new_camera_matrix.at<double>(1, 1);
+    double cx_new = new_camera_matrix.at<double>(0, 2);
+    double cy_new = new_camera_matrix.at<double>(1, 2);
+
+    std::vector<cv::Point2f> undistorted_norm_points;
+    for(int h = 0; h < input_image.rows; h++) {
+        for(int w = 0; w < input_image.cols; w++) {
+            undistorted_norm_points.emplace_back((w - cx_new) / fx_new, (h - cy_new) / fy_new);
+        }
+    }
+
+    std::vector<cv::Point2f> distorted_points(undistorted_norm_points.size());
+    /**
+     * @brief 用鱼眼模型对2D点进行畸变操作
+     * @param undistorted 输入无畸变图像的坐标位置(需要先归一化，即减去主点坐标并除以焦距)，可以是一个点或者一组点
+     * @param distorted 输出对应的畸变图像的坐标位置，和输入点一一对应
+     * @param K 输入的相机内参矩阵
+     * @param D 输入的畸变系数
+     */
+    cv::fisheye::distortPoints(undistorted_norm_points, distorted_points, k, dist_coeffs_mat);
+    cv::Mat distorted_image = cv::Mat::zeros(input_image.size(), input_image.type());
+    for(int h = 0; h < input_image.rows; h++) {
+        for(int w = 0; w < input_image.cols; w++) {
+            cv::Point2f distorted_pt = distorted_points[h * input_image.cols + w];
+            int distorted_x = static_cast<int>(std::round(distorted_pt.x));
+            int distorted_y = static_cast<int>(std::round(distorted_pt.y));
+            if(distorted_x >= 0 && distorted_x < input_image.cols && distorted_y >= 0 && distorted_y < input_image.rows) {
+                distorted_image.at<cv::Vec3b>(distorted_y, distorted_x) = input_image.at<cv::Vec3b>(h, w);
+            }
+        }
+    }
+
+    std::string output_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/frontwide_3840_2048_nv12_fisheye_distorted.jpg";
+    cv::imwrite(output_image_path, distorted_image);
+    std::cout << "Saved distorted image to: " << output_image_path << std::endl;
+}
+
 int main() {
     std::cout << "======================== infrared_pinhole_undistor_sequnce ========================" << std::endl;
     infrared_pinhole_undistor_sequnce();
@@ -385,6 +455,8 @@ int main() {
     fl_fisheye_undistor_sequnce();
     std::cout << "======================== sfl_fisheye_undistor_sequnce ========================" << std::endl;
     sfl_fisheye_undistor_sequnce();
+    std::cout << "======================== fisheye_distort ========================" << std::endl;
+    fisheye_distort();
 
     return 0;
 }
