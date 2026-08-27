@@ -13,7 +13,6 @@
 #include <opencv2/opencv.hpp> // OpenCV主要功能
 #include <opencv2/imgproc/types_c.h> // 旧版的图像处理
 
-
 /**
  * 坐标：
  * 0.世界坐标：
@@ -24,24 +23,43 @@
  *   - (x, y) = (X_c / Z_c, Y_c / Z_c)
  * 3.像素坐标系(2D,单位px):
  *   - (u, v)
- *
- * 两个都是半径：
- *   - r: 归一化平面上到原点的距离,也就是sqrt(x^2 + y^2)
- *   - phi：像素平面上到中心的距离，单位是像素
- *   - 畸变模型就是建立r(或者等价的thea)和phi的关系
  */
 
 /**
- * 所有相机模型本质都是：
- *   - 一条入射角是thea(光线跟光轴的夹角)的光线，会落在像面居中心phi多远的地方
- *   - 不同模型就是不同的 phi = f(thea) 函数。
- *   - 方位角gama：从光轴方向俯视看，绕着光轴转了多少度。
- *   - 畸变：实际的phi和理想的phi不一样，畸变模型就是描述这个差异的函数。畸变系数就是修正这个差异的参数。
- * 成像链条：
- *  世界坐标 -> 相机坐标 -> 归一化平面坐标(x_n, y_n) -> 畸变 -> (x_d, y_d) -> K矩阵 -> 像素坐标(u, v)
+ * 理解相机的成像过程：
+ * 1. 相机坐标系
+ *    - 光心为原点，z向前，x向右，y向下
+ * 2. 相机只感知方向，不感知距离，即没有深度信息
+ *    - 相机坐标中的两个点P(2, 1, 10)和Q(4, 2, 20)因为在同一条穿过光心的射线上，所以他们会落在同一个像素中
+ *    - 所以决定某个位置的点所在射线才是其落在像素某个位置的关键，即成像只与方向有关
+ * 3. z=1的平面，给光线加编号
+ *    - 在Z=1处，放一个虚拟平面，记录光线跟这个平面的交点
+ *    - 上述两个点会变成：P(0.2, 0.1, 1)和Q(0.2, 0.1, 1)，点位置一样了
+ *    - 即得到了归一化的坐标(0.2, 0.1)
+ *    - 假设光线跟光轴夹角是thea，则tan(thea) = sqrt(x^2+y^2)/1，所以thea = atan(sqrt(x^2+y^2)/1)
+ * 4. 理想小孔相机
+ *    - 假设相机没有畸变，则上述归一化平面的点对应的像素为：
+ *    - u = fx * 0.2 + cx，可以自己画图证明下
+ *    - v = fy * 0.1 + cx
+ * 5. 带畸变的真实镜头：
+ *    - 对于射入角度5°：理想小孔像素落在40.6，鱼眼镜头落在40.5，偏差0.1
+ *    - 对于射入角度45°：理想小孔像素落在464，鱼眼镜头落在360，偏差104
+ *    - 畸变：实际落点减去理想落点就是畸变
+ *    - 畸变模型：用一个公式将这个偏差值描述出来
+ * 6. 多种畸变模型
+ *    - 有多种畸变模型是因为入射角thea，但是其tan(thea)的变化会发散，并且入射角度比较大的时候难以使用tan(thea)
+ *    - 这几种畸变模型的不同主要在：自变量+公式
+ *    - 针孔模型：自变量是tan(thea)，公式参考下面
+ *    - 鱼眼模型(KB模型)：自变量是入射角thea
+ *    - OCam模型：自变量是入射角thea
+ * 7.去畸变：换一个公式描述光线对应的像素位置
+ *    - 例如一条45°的光纤，鱼眼是落在360，理想小孔是464，于是需要把畸变图像上的360位置像素搬移到新图(去畸变图)像464位置
+ *
  * 下列参数含义：
  *   - thea: 入射角，光线与光轴的夹角
- *   - phi：单位是像素，而像素数量依赖焦距f，因此除以焦距f后，phi/f = f(thea) / f统一到跟焦距无关平面
+ *   - r: 归一化平面上到原点的距离,也就是sqrt(x^2 + y^2)
+ *   - phi：像素平面上到中心的距离，单位是像素.而像素数量依赖焦距f，因此除以焦距f后，phi/f = f(thea) / f统一到跟焦距无关平面
+ *   - 畸变模型就是建立r(或者等价的thea)和phi的关系
  * 针孔相机模型(pinhole camera model)：
  *   - r = sqrt(x^2 + y^2)，这里是归一化平面的坐标(x,y)
  *   - 径向：x_r = x(1 + k1*r^2 + k2*r^4 + k3*r^6), y_r = y(1 + k1*r^2 + k2*r^4 + k3*r^6)
@@ -66,7 +84,7 @@
 
 /**
  * 0.去畸变：
- *      相机是3D射线到2d像素的映射。理想针孔相机这个映射是摄影线性的(一个矩阵K)
+ *      相机是3D射线到2d像素的映射。理想针孔相机这个映射是线性的(一个矩阵K)
  *      但是实际相机是有畸变的。去畸变就是造一张新图，让这张新图严格服从理想针孔映射
  * 1.针孔相机模型的畸变矫正：
  *      当前的getOptimalNewCameraMatrix/initUndistortRectifyMap/remap
@@ -124,6 +142,34 @@
   *      - -0.303234, 0.053968, -0.001405, -0.000301, 0.0
   *      - 640x512
   *      - pinhole
+  * 9.SurroundFront:
+  *      - affine: 1.00032, 0.000233026, 0.000178776, 1
+  *      - distort_center: 954.717, 770.999
+  *      - ray2pixel: 815.031, 603.915, 87.5408, 85.5428, 64.9007, 18.26, 16.3885, 11.3528, 1.8612, 8.67193, 7.59118, -3.17747, -6.09492, -2.58876, -0.371392, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  *      - pixel2ray: -443.792, 0, 0.000386949, 3.27527e-7, 3.33583e-11
+  *      - camera2world_q: 0.375308, -0.585322, 0.608388, -0.38263
+  *      - camera2worlc_t: 3.73539, 0.000965414, 0.627907
+  * 10.SurroundLeft:
+  *      - affine: 1.00019, -0.000156714, -0.0000130094, 1
+  *      - distort_center: 957.83, 767.21
+  *      - ray2pixel: 811.112, 602.894, 92.681, 89.5724, 65.9754, 19.982, 17.6316, 11.3648, 2.51892, 9.23328, 7.35395, -3.15194, -5.66501, -2.32672, -0.323997
+  *      - pixel2ray: -443.792, 0, 0.000386949, 3.27527e-7, 3.33583e-11
+  *      - camera2world_q: 0.46685, -0.884327, -0.00177482, 0.00372135
+  *      - camera2worlc_t: 2.04807, 0.979575, 0.910843
+  * 11.SurroundRear:
+  *      - affine: 1.00088, 0.000204419, 0.000193557, 1
+  *      - distort_center: 957.593, 767.195
+  *      - ray2pixel: 813.391, 603.85, 92.4195, 89.931, 66.0683, 19.9283, 17.6774, 11.3558, 2.79006, 9.61182, 7.16409, -3.77732, -6.12483, -2.47658, -0.342968
+  *      - pixel2ray: -445.301, 0, 0.000384872, 3.276e-7, 3.28359e-11
+  *      - camera2world_q: 0.338061, -0.621752, -0.623537, 0.332176
+  *      - camera2worlc_t: -1.00843, -0.0178599, 0.874906
+  * 12.SurroundRight:
+  *      - affine: 0.998986, -0.000496911, -0.000412609, 1
+  *      - distort_center: 962.225, 768.768
+  *      - ray2pixel: 815.401, 606.012, 93.6462, 90.9017, 66.6304, 20.288, 17.96, 11.4538, 2.92051, 9.79934, 7.19289, -3.8655, -6.18249, -2.48868, -0.343486
+  *      - pixel2ray: -446.057, 0, 0.000381935, 3.30559e7, 2.91964e-11
+  *      - camera2world_q: 0.0101073, 0.00161615, 0.888301, -0.459148
+  *      - camera2worlc_t: 2.04029, -0.970833, 0.911478
   */
 struct CameraParams {
     cv::Mat K; // 内参矩阵
@@ -662,6 +708,144 @@ void fisheye_undistort_point() {
     std::cout << "Saved distorted image to: " << output_image_path << std::endl;
 }
 
+struct SurroundCameraParams {
+    cv::Size ori_image_size; // 原始图像尺寸
+    cv::Size undistorted_image_size; // 去畸变后图像尺寸
+    double fov = 0.0; // fov视场角度
+    std::vector<double> affine;
+    std::vector<double> ray2pixel;
+    std::vector<double> distort_center;
+    std::string input_image_path = ""; // 输入图像路径
+    std::string output_input_image_path = ""; // 输入图像保存路径
+    std::string output_undistorted_image_path = ""; // 去畸变后图像保存路径
+};
+
+cv::Point2f GetOCamSrcPoint(const double& u_norm, const double& v_norm, const SurroundCameraParams& param) {
+    double r = std::sqrt(u_norm * u_norm + v_norm * v_norm);
+    if(r < 1e-12) {
+        // 落在光轴
+        return cv::Point2f(static_cast<float>(param.distort_center[0]), static_cast<float>(param.distort_center[1]));
+    }
+
+    // 求光线跟光轴的夹角
+    double theta = std::atan(r);
+
+    /**
+     * @brief OCam多项式的角度从xy平面量起来，且光轴方向是负数
+     * phi(光线跟光轴夹角)  -  OCAM对应的角度
+     *  0°                     -90°
+     *  30°                    -60°
+     *  90°                    0°
+     *  95°                    +5°
+     * @note 因为OCam最初是给折返相机设计的，即允许入射角度超过90度。在角度从小于90度穿过大于90°时，tan的值会剧烈变化
+     *       因此调整到xy平面，就可以从-90°到+90°，tan线性变化
+     */
+    double thetad = theta - CV_PI/2.0;
+
+    double rho = 0.0;
+    for(int i = param.ray2pixel.size() - 1; i >= 0 ; i--) {
+        rho = rho * thetad + param.ray2pixel.at(i);
+    }
+
+    double u_distort = u_norm / r * rho;
+    double v_distort = v_norm / r * rho;
+    return cv::Point2f(
+        static_cast<float>(u_distort * param.affine[0] + v_distort * param.affine[1] + param.distort_center[0]),
+        static_cast<float>(u_distort * param.affine[2] + v_distort * param.affine[3] + param.distort_center[1])
+    );
+}
+
+void surround_ocam_undistort(const SurroundCameraParams& param) {
+    // 获取输入图像
+    std::string input_image_path = param.input_image_path;
+    std::ifstream input_image_stream(input_image_path, std::ios::binary | std::ios::ate);
+    if(!input_image_stream.is_open()) {
+        std::cerr << "Could not open input image file: " << input_image_path << std::endl;
+        return;
+    }
+    std::streamsize input_image_size = input_image_stream.tellg();
+    input_image_stream.seekg(0, std::ios::beg);
+    int expected_input_image_size = param.ori_image_size.width * param.ori_image_size.height * 3 / 2;
+    if(input_image_size != expected_input_image_size) {
+        std::cerr << "Input image size does not match expected size: " << input_image_size << " bytes." << std::endl;
+        return;
+    }
+    std::cout << "Input image size: " << input_image_size << " bytes." << std::endl;
+    std::vector<unsigned char> input_image_data(input_image_size);
+    if(!input_image_stream.read(reinterpret_cast<char*>(input_image_data.data()), input_image_size)) {
+        std::cerr << "Error reading input image file: " << input_image_path << std::endl;
+        return;
+    }
+    cv::Mat input_image( param.ori_image_size.height +  param.ori_image_size.height / 2,  param.ori_image_size.width, CV_8UC1, input_image_data.data());
+    cv::Mat input_image_bgr;
+    cv::cvtColor(input_image, input_image_bgr, cv::COLOR_YUV2BGR_NV12); // NV12格式转换为BGR格式
+    std::string output_input_image_path = param.output_input_image_path;
+    cv::imwrite(output_input_image_path, input_image_bgr);
+    std::cout << "Saved input image in BGR format to: " << output_input_image_path << std::endl;
+
+    // 映射
+    cv::Mat mapx(input_image_bgr.size(), CV_32F);
+    cv::Mat mapy(input_image_bgr.size(), CV_32F);
+
+    // 虚拟针孔相机参数生成
+    double out_x = param.distort_center[0];
+    double out_y = param.distort_center[1];
+    double out_fov = param.fov;
+    /**
+     * @brief 用于设定视场
+     * 1.图像最右侧的像素是out_x
+     * 2.对应视场角度 out_fov/2 射入的光线
+     * 3.根据针孔公式：out_x/focal = x / 1，则会归一化坐标x=out_x/focal
+     * 4.则入射角为 atan(out_x/focal) = out_fov / 2
+     * 5.则focal = out_x / tan(out_fov/2)
+     */
+    double out_f = out_x / std::tan(out_fov * CV_PI / 180.0 / 2.0);
+
+    for(int v = 0; v < param.ori_image_size.height; v++) {
+        for(int u = 0; u < param.ori_image_size.width; u++) {
+            cv::Point2f p = GetOCamSrcPoint((u - out_x)/out_f, (v - out_y)/out_f, param);
+            mapx.at<float>(v, u) = p.x;
+            mapy.at<float>(v, u) = p.y;
+        }
+    }
+
+    cv::Mat undistort_image;
+    cv::remap(input_image_bgr, undistort_image, mapx, mapy, cv::INTER_LINEAR);
+    std::string output_path = param.output_undistorted_image_path;
+    cv::imwrite(output_path, undistort_image);
+    std::cout << "Saved undistorted image to: " << output_path << std::endl;
+}
+
+void surround_front_undistort() {
+    struct SurroundCameraParams param;
+    param.ori_image_size = cv::Size(1920, 1536);
+    param.undistorted_image_size = cv::Size(1920, 1536);
+    param.fov = 140.0;
+    param.affine = std::vector<double>{1.00032, 0.000233026, 0.000178776, 1};
+    param.ray2pixel = std::vector<double>{815.031, 603.915, 87.5408, 85.5428, 64.9007, 18.26, 16.3885, 11.3528, 1.8612, 8.67193, 7.59118, -3.17747, -6.09492, -2.58876, -0.371392, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    param.distort_center = std::vector<double>{954.717, 770.999};
+    param.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/surroundfront_1920x1536_nv12.yuv";
+    param.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/surroundfront_1920x1536_nv12_bgr.jpg";
+    param.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/surroundfront_1920x1536_nv12_undistort.jpg";
+
+    surround_ocam_undistort(param);
+}
+
+void surround_rear_undistort() {
+    struct SurroundCameraParams param;
+    param.ori_image_size = cv::Size(1920, 1536);
+    param.undistorted_image_size = cv::Size(1920, 1536);
+    param.fov = 140.0;
+    param.affine = std::vector<double>{1.00088, 0.000204419, 0.000193557, 1};
+    param.ray2pixel = std::vector<double>{813.391, 603.85, 92.4195, 89.931, 66.0683, 19.9283, 17.6774, 11.3558, 2.79006, 9.61182, 7.16409, -3.77732, -6.12483, -2.47658, -0.342968};
+    param.distort_center = std::vector<double>{957.593, 767.195};
+    param.input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/image/car/surroundrear_1920x1536_nv12.yuv";
+    param.output_input_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/surroundrear_1920x1536_nv12_bgr.jpg";
+    param.output_undistorted_image_path = "/mnt/workspace/cgz_workspace/Exercise/opencv_example/output/surroundrear_1920x1536_nv12_undistort.jpg";
+
+    surround_ocam_undistort(param);
+}
+
 int main() {
     std::cout << "======================== infrared_pinhole_undistor_sequnce ========================" << std::endl;
     infrared_pinhole_undistor_sequnce();
@@ -677,6 +861,10 @@ int main() {
     fisheye_undistort();
     std::cout << "======================== fisheye_undistort_point ========================" << std::endl;
     fisheye_undistort_point();
+    std::cout << "======================== surround_front_undistort ========================" << std::endl;
+    surround_front_undistort();
+    std::cout << "======================== surround_rear_undistort ========================" << std::endl;
+    surround_rear_undistort();
 
     return 0;
 }
