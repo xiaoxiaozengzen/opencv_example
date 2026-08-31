@@ -36,3 +36,5 @@ target_link_libraries(nchw2yuv ${OpenCV_LIBRARIES})
 add_executable(perspective ${CMAKE_CURRENT_SOURCE_DIR}/src/perspective.cpp)
 target_include_directories(perspective PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(perspective ${OpenCV_LIBRARIES})
+
+add_subdirectory(ipm_bev)
