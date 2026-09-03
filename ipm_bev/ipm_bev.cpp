@@ -95,6 +95,7 @@ void ipm_bev_surround(const BevParams& bev_param, const SurroundCameraParams& su
     std::vector<std::array<double, 3>> cam_points(bev_size.width * bev_size.height);
     std::vector<std::array<double, 3>> norm_points(bev_size.width * bev_size.height);
     std::vector<bool> can_get_src(bev_size.width * bev_size.height, false);
+    // 2.1. 计算BEV平面每个像素点对应的世界坐标系下的坐标，并转换到相机坐标系下的坐标
     for(int v = 0; v < bev_size.height; v++) {
         for(int u = 0; u < bev_size.width; u++) {
             world_points[v*bev_size.height + u] = {
@@ -179,7 +180,7 @@ void ipm_bev_front() {
     bev_params.round_bev_y_dis = 16.0;
     bev_params.single_pixel_dis = 0.02;
     bev_params.shift_center_x = 0.0;
-    bev_params.shift_center_y = 0.8;
+    bev_params.shift_center_y = 1.4;
     bev_params.world2cam_matrix_arr = {
         -0.0330839, -0.999415, -0.00874261, 0.130036, 
         -0.424998, 0.0219843, -0.904928, 2.15572, 
@@ -209,7 +210,7 @@ void ipm_bev_left() {
     bev_params.round_bev_y_dis = 16.0;
     bev_params.single_pixel_dis = 0.02;
     bev_params.shift_center_x = 0.0;
-    bev_params.shift_center_y = 0.8;
+    bev_params.shift_center_y = 1.4;
     bev_params.world2cam_matrix_arr = {
         0.999966, 0.00661366, -0.00492463, -2.04999, 
         -0.000335581, -0.564096, -0.825709, 1.30535, 
@@ -239,7 +240,7 @@ void ipm_bev_rear() {
     bev_params.round_bev_y_dis = 16.0;
     bev_params.single_pixel_dis = 0.02;
     bev_params.shift_center_x = 0.0;
-    bev_params.shift_center_y = 0.8;
+    bev_params.shift_center_y = 1.4;
     bev_params.world2cam_matrix_arr = {
         0.00172154, 0.999962, 0.00852483, 0.0121369, 
         0.550779, 0.00616723, -0.834628, 1.28575, 
@@ -269,7 +270,7 @@ void ipm_bev_right() {
     bev_params.round_bev_y_dis = 16.0;
     bev_params.single_pixel_dis = 0.02;
     bev_params.shift_center_x = 0.0;
-    bev_params.shift_center_y = 0.8;
+    bev_params.shift_center_y = 1.4;
     bev_params.world2cam_matrix_arr = {
         -0.99979, -0.00641023, -0.0194407, 2.05136, 
         0.0121527, 0.578361, -0.81569, 1.28018, 
